@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import {
-  QrcodeStream,
-  type DetectedBarcode,
-  type EmittedError,
-} from "vue-qrcode-reader";
+// -------------------------- CONSTANTS START --------------------------
+import { QrcodeStream, type EmittedError } from "vue-qrcode-reader";
 import { VTextField } from "vuetify/components";
+import { ref, onMounted } from "vue";
+const keyPressResult = ref("");
+const cameraResults = ref("");
+const txtFieldResult = ref("");
+const disabledButtons = ref(true);
+const overlay = ref(false);
+const errorMessage = ref("");
+const paused = ref(false);
 
-function onDetect(result: DetectedBarcode[]) {
-  console.log("Code detected:", result);
-  const newBarcode = result[0];
-  console.log("Raw value:", newBarcode.rawValue);
-  return newBarcode.rawValue;
-}
-
+// -------------------------ERROR HANDLING START -------------------------
 function onError(error: EmittedError) {
   if (error.name === "NotAllowedError") {
     console.log("Camera access denied");
@@ -27,34 +26,82 @@ function onError(error: EmittedError) {
   } else if (error.name === "StreamApiNotSupportedError") {
     console.log("Browser seems to be lacking features");
   }
+  errorMessage.value = error.message;
+  systemAlert(error.message);
 }
 
-const result = ref<DetectedBarcode[]>([]);
-const stringResult = ref("");
-const disabledButtons = ref(true);
-const overlay = ref(false);
+// -------------------------DETECTION START -------------------------
+function onDetect(result: any[]) {
+  console.log("Code detected:", result);
+  paused.value = true;
+  setTimeout(() => {
+    const newBarcode = result[0];
+    console.log("Raw value:", newBarcode.rawValue);
+    cameraResults.value = newBarcode.rawValue;
+    overlay.value = false;
+  }, 1000);
+}
 
+// ------------------------PaintBoxThingy for Camera -----------------------
+function paintBoundingBox(detectedCodes: any, ctx: CanvasRenderingContext2D) {
+  for (const detectedCode of detectedCodes) {
+    const {
+      boundingBox: { x, y, width, height },
+    } = detectedCode;
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#007bff";
+    ctx.strokeRect(x, y, width, height);
+  }
+}
+
+// -------------------------KEYBOARD INPUT START -------------------------
 function logKey(event: KeyboardEvent) {
-  if (event.key === "Enter") {
-    stringResult.value += "";
-    return;
-  } else if (event.key === "Backspace") {
-    stringResult.value = stringResult.value.slice(0, -1);
+  if (txtFieldResult.value) {
     return;
   }
-  stringResult.value += event.key;
+  if (event.key === "Enter") {
+    keyPressResult.value += "";
+    return;
+  }
+  if (event.key === "Backspace") {
+    keyPressResult.value = keyPressResult.value.slice(0, -1);
+    return;
+  }
+  keyPressResult.value += event.key;
 }
 
+function systemAlert(message: string) {
+  overlay.value = false;
+  alert("Error: " + message);
+}
+
+function clearAll() {
+  keyPressResult.value = "";
+  cameraResults.value = "";
+  txtFieldResult.value = "";
+}
+
+function activateInput() {
+  txtFieldResult.value = "";
+  keyPressResult.value = "";
+  cameraResults.value = "";
+  disabledButtons.value = !disabledButtons.value;
+  return disabledButtons.value;
+}
+
+// -------------------------ONMOUNTED START (Pls don't judge) -------------------------
 onMounted(() => {
   document.addEventListener("keydown", logKey);
 });
 </script>
 
-<!-- Plan is to have a manual input field for the user to either type in or let the scanner automatically fill it.
+<!-- IMPORTANT: Plan is to have a manual input field for the user to either type in or let the scanner automatically fill it.
 Depending on the scanner, Zebra devices might need to use DataWedge to ensure data is being correctly entered
 Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be used for the barcode scanning for the user to enter through the camera-->
 
-<template id="tempId">
+<template>
+  <!-- This is where we want the scan with camera and possibly the manual input button as well -->
   <NuxtLayout>
     <VApp>
       <VAppBar location="top">
@@ -62,47 +109,68 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
           <VAppBarNavIcon></VAppBarNavIcon>
         </template>
 
-        <VAppBarTitle>Barcode scanner</VAppBarTitle>
-
         <template v-slot:append>
-          <VBtn icon="mdi-magnify"></VBtn>
-
-          <VBtn icon="mdi-dots-vertical"></VBtn>
-          <VBtn @click="overlay = !overlay"> Scan with Camera </VBtn>
+          <VBtn
+            @click="activateInput()"
+            size="small"
+            variant="elevated"
+            class="mr-2"
+          >
+            Manual Input
+          </VBtn>
+          <VBtn
+            @click="overlay = !overlay"
+            size="small"
+            variant="elevated"
+            class="mr-9"
+          >
+            Scan with Camera
+          </VBtn>
         </template>
       </VAppBar>
+      <!-------------------------------------------------------------->
 
+      <!-- This is where we want the main content to be. So where the product data is displayed before search has to be pressed (possibly having them chose what format it is for it to be automatic/delay check) -->
       <VMain>
         <VRow>
+          <VCol cols="12">
+            <p v-if="cameraResults">Camera results: {{ cameraResults }}</p>
+            <p
+              v-if="
+                keyPressResult && txtFieldResult.length === 0 && disabledButtons
+              "
+            >
+              Product ID: {{ keyPressResult }}
+            </p>
+          </VCol>
           <VCol cols="fill">
             <VTextField
-              id="consignment-number"
+              v-if="!disabledButtons"
               class="mt-8"
               focused
               variant="solo"
-              :disabled="disabledButtons"
-              label="Consignment Number"
-              v-model="stringResult"
+              label="Product Number"
+              v-model="txtFieldResult"
             ></VTextField>
             <!-- potentially change the v-model to the raw value of the detectedBarcode somehow -->
           </VCol>
 
-          <VCol cols="auto" align-self="center">
-            <VBtn @click="disabledButtons = !disabledButtons" size="small">
-              Manual Input
-            </VBtn>
-          </VCol>
-
           <VCol cols="12">
             <VBtn size="small" location="center"> Search </VBtn>
+            <VBtn size="small" location="center" @click="clearAll()">
+              Clear
+            </VBtn>
           </VCol>
           <VOverlay v-model="overlay">
             <VBtn @click="overlay = false" location="top left"> Close </VBtn>
+            <!-- This is the scanner for barcodes/qr codes. Camera automatically turns off when the overlay disappears. Currently set to qr and ean 13 codes -->
             <QrcodeStream
-              :formats="['qr_code', 'code_128']"
+              :formats="['qr_code', 'ean_13']"
               @detect="onDetect"
+              :track="paintBoundingBox"
               @error="onError"
-              v-model="result"
+              :paused="paused"
+              v-model="cameraResults"
             ></QrcodeStream>
             <!-- Check whether it does recognise the other formats except for qr codes-->
           </VOverlay>
