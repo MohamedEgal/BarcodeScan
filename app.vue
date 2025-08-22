@@ -71,17 +71,20 @@ function logKey(event: KeyboardEvent) {
   keyPressResult.value += event.key;
 }
 
+// -------------------Alert for the camera error -------------------
 function systemAlert(message: string) {
   overlay.value = false;
   alert("Error: " + message);
 }
 
+// -------------------Clear all input fields -------------------
 function clearAll() {
   keyPressResult.value = "";
   cameraResults.value = "";
   txtFieldResult.value = "";
 }
 
+// -------------------Manual Input button clears all text fields -------------------
 function activateInput() {
   txtFieldResult.value = "";
   keyPressResult.value = "";
