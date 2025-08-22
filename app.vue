@@ -31,15 +31,30 @@ function onError(error: EmittedError) {
 
 const result = ref<DetectedBarcode[]>([]);
 const stringResult = ref("");
-const disabledButtons = ref(false);
+const disabledButtons = ref(true);
 const overlay = ref(false);
+
+function logKey(event: KeyboardEvent) {
+  if (event.key === "Enter") {
+    stringResult.value += "";
+    return;
+  } else if (event.key === "Backspace") {
+    stringResult.value = stringResult.value.slice(0, -1);
+    return;
+  }
+  stringResult.value += event.key;
+}
+
+onMounted(() => {
+  document.addEventListener("keydown", logKey);
+});
 </script>
 
 <!-- Plan is to have a manual input field for the user to either type in or let the scanner automatically fill it.
 Depending on the scanner, Zebra devices might need to use DataWedge to ensure data is being correctly entered
 Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be used for the barcode scanning for the user to enter through the camera-->
 
-<template>
+<template id="tempId">
   <NuxtLayout>
     <VApp>
       <VAppBar location="top">
@@ -61,7 +76,9 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
         <VRow>
           <VCol cols="fill">
             <VTextField
+              id="consignment-number"
               class="mt-8"
+              focused
               variant="solo"
               :disabled="disabledButtons"
               label="Consignment Number"
@@ -70,15 +87,11 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
             <!-- potentially change the v-model to the raw value of the detectedBarcode somehow -->
           </VCol>
 
-          <!-- <VCol cols="auto" align-self="center">
-            <VBtn
-              @click="disabledButtons = !disabledButtons"
-              class="mb-5"
-              size="small"
-            >
+          <VCol cols="auto" align-self="center">
+            <VBtn @click="disabledButtons = !disabledButtons" size="small">
               Manual Input
             </VBtn>
-          </VCol> -->
+          </VCol>
 
           <VCol cols="12">
             <VBtn size="small" location="center"> Search </VBtn>
