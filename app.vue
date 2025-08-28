@@ -222,86 +222,11 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
     <!-- This is where we want the main content to be. So where the product data is displayed before search has to be pressed (possibly having them chose what format it is for it to be automatic/delay check) -->
     <VMain>
       <VRow>
-        <VCol cols="12" class="text-center mt-12">
-          <p class="text-h7">Please scan</p>
-        </VCol>
-        <VCol cols="12" class="text-center"
-          ><VDivider class="my-7"> OR</VDivider>
-        </VCol>
         <VCol cols="12" class="text-center">
-          <p class="text-h7">Enter details</p>
+          <VDivider class="my-7"> OR</VDivider>
         </VCol>
-        <VCol cols="12">
-          <VTextField
-            class="mt-8"
-            variant="solo"
-            label="Barcode Number"
-            v-model="txtFieldInput"
-          ></VTextField>
-        </VCol>
+        <txtInput />
 
-        <VCol cols="12" class="mb-8 text-center">
-          <VBtn
-            size="small"
-            class="mx-2"
-            color="green"
-            @click="barcodeSubmit(txtFieldInput)"
-          >
-            Search
-          </VBtn>
-          <VBtn
-            size="small"
-            @click="clearAll()"
-            class="mx-2 text-center"
-            color="grey"
-          >
-            Clear
-          </VBtn>
-        </VCol>
-        <VCol cols="12">
-          <VOverlay v-model="overlay">
-            <!-- This is the scanner for barcodes/qr codes. Camera automatically turns off when the overlay disappears. Currently set to qr and ean 13 codes -->
-            <QrcodeStream
-              class="border-lg border-success border-opacity-100 mt-2"
-              :formats="[
-                'aztec',
-                'code_128',
-                'code_39',
-                'code_93',
-                'codabar',
-                'databar',
-                'databar_expanded',
-                'data_matrix',
-                'dx_film_edge',
-                'ean_13',
-                'ean_8',
-                'itf',
-                'maxi_code',
-                'micro_qr_code',
-                'pdf417',
-                'qr_code',
-                'rm_qr_code',
-                'upc_a',
-                'upc_e',
-                'linear_codes',
-                'matrix_codes',
-                'unknown',
-              ]"
-              @detect="onDetect"
-              :track="paintBoundingBox"
-              @error="onError"
-              :paused="paused"
-            >
-              <VBtn
-                @click="overlay = false"
-                class="mt-0 position-absolute right-0 rounded-xl opacity-80"
-              >
-                Close</VBtn
-              ></QrcodeStream
-            >
-            <!-- Check whether it does recognise the other formats-->
-          </VOverlay>
-        </VCol>
         <VCol cols="12">
           <VDivider class="my-12" v-if="finalResult.length"
             >CURRENT LIST</VDivider
