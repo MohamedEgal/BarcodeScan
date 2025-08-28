@@ -3,22 +3,22 @@
 import {
   QrcodeStream,
   type BarcodeFormat,
+  type DetectedBarcode,
   type EmittedError,
 } from "vue-qrcode-reader";
 import { VTextField } from "vuetify/components";
 import { ref, onMounted } from "vue";
 
 // ------------------------- CONST ---------------------------
-const keyPressResult = ref("");
-const cameraResults = ref<{ rawValue: string; format: string }[]>([]);
-const txtFieldResult = ref("");
-const finalResult = ref("");
+const barcodeScanInput = ref("");
+const txtFieldInput = ref("");
+const finalResult = ref<{ BarNumber: string; format: string }[]>([]);
 const overlay = ref(false);
 const errorMessage = ref("");
 const paused = ref(false);
-const barcodeFormats = ref({
-  "UPC-A": 12,
-  "UPC-E": 6,
+const barcodeFormats = {
+  UPC_A: 12,
+  UPC_E: 6,
   QR_CODE: 8,
   EAN_13: 13,
   EAN_8: 8,
@@ -28,7 +28,7 @@ const barcodeFormats = ref({
   CODABAR: 16,
   ITF: 14,
   GS1: 17,
-});
+};
 
 // -------------------------ERROR HANDLING START -------------------------
 function onError(error: EmittedError) {
@@ -50,28 +50,28 @@ function onError(error: EmittedError) {
 }
 
 // -------------------------DETECTION START -------------------------
-function onDetect(result: any[]) {
-  console.log("Code detected:", result);
+function onDetect(result: DetectedBarcode[]) {
   paused.value = true;
   const newBarcode = result[0];
   setTimeout(() => {
-    for (const existingBarcode of cameraResults.value) {
-      if (existingBarcode.rawValue === newBarcode.rawValue) {
+    for (const existingBarcode of finalResult.value) {
+      if (existingBarcode.BarNumber === newBarcode.rawValue.toString()) {
         overlay.value = false;
         paused.value = false;
+        alert("Barcode already added");
         return;
       }
     }
-    cameraResults.value.push({
-      rawValue: newBarcode.rawValue,
+    finalResult.value.push({
+      BarNumber: newBarcode.rawValue,
       format: newBarcode.format,
     });
 
     overlay.value = false;
     paused.value = false;
-  }, 1000);
 
-  cameraScanSubmit(newBarcode);
+    cameraScanSubmit(newBarcode);
+  }, 1000);
 }
 
 // -----------------------Submitted Camera Scan ---------------------
@@ -93,29 +93,36 @@ function paintBoundingBox(detectedCodes: any, ctx: CanvasRenderingContext2D) {
 }
 
 // -------------------------KEYBOARD INPUT START -------------------------
-async function logKey(event: KeyboardEvent) {
-  if (event.key === "Enter" && !keyPressResult.value && !txtFieldResult.value) {
+function logKey(event: KeyboardEvent) {
+  if (
+    event.key === "Enter" &&
+    !barcodeScanInput.value.length &&
+    !txtFieldInput.value.length
+  ) {
     alert("No Barcode Detected");
-    return;
-  } else if (event.key === "Enter" && !txtFieldResult.value) {
-    barcodeSubmit(keyPressResult.value);
-    keyPressResult.value = "";
-    return;
-  } else if (event.key === "Enter" && !keyPressResult.value) {
-    barcodeSubmit(txtFieldResult.value);
     return;
   }
 
-  if (txtFieldResult.value) {
-    keyPressResult.value = "";
+  if (event.key === "Enter" && !txtFieldInput.value.length) {
+    barcodeSubmit(barcodeScanInput.value);
+    barcodeScanInput.value = "";
+    return;
+  }
+  if (event.key === "Enter" && !barcodeScanInput.value.length) {
+    barcodeSubmit(txtFieldInput.value);
+    return;
+  }
+
+  if (txtFieldInput.value.length) {
+    barcodeScanInput.value = "";
     return;
   }
 
   if (event.key === "Backspace") {
-    keyPressResult.value = keyPressResult.value.slice(0, -1);
+    barcodeScanInput.value = barcodeScanInput.value.slice(0, -1);
     return;
   }
-  keyPressResult.value += event.key;
+  barcodeScanInput.value += event.key;
 }
 
 // -------------------Alert for the camera error -------------------
@@ -126,18 +133,18 @@ function systemAlert(message: string) {
 
 // -------------------Clear all input fields -------------------
 function clearAll() {
-  keyPressResult.value = "";
-  cameraResults.value = [];
-  txtFieldResult.value = "";
+  barcodeScanInput.value = "";
+  txtFieldInput.value = "";
+  finalResult.value = [];
 }
 
 // --------------------Check barcode format ------------------------
 function checkBarcodeFormat(newResult: string) {
-  let format: keyof typeof barcodeFormats.value | undefined;
+  let format: keyof typeof barcodeFormats | undefined;
 
-  for (const [key, value] of Object.entries(barcodeFormats.value)) {
+  for (const [key, value] of Object.entries(barcodeFormats)) {
     if (value === newResult.length) {
-      format = key as keyof typeof barcodeFormats.value;
+      format = key as keyof typeof barcodeFormats;
     }
   }
   if (!format || undefined) {
@@ -151,13 +158,30 @@ function checkBarcodeFormat(newResult: string) {
 //--------------------- Barcode scanner submit ----------------------
 
 function barcodeSubmit(barScan: string) {
+  for (const existingBarcode of finalResult.value) {
+    if (existingBarcode.BarNumber === barScan) {
+      alert("Barcode already added");
+      return;
+    }
+  }
   const format = checkBarcodeFormat(barScan);
   if (!format) {
     return;
   }
-  finalResult.value = barScan;
   if (format) {
-    alert("Submitted: " + barScan + ". Format: " + format);
+    finalResult.value.push({
+      BarNumber: barScan,
+      format: format,
+    });
+    alert(
+      "Submitted: " +
+        finalResult.value[finalResult.value.length - 1].BarNumber +
+        ". Format: " +
+        finalResult.value[finalResult.value.length - 1].format
+    );
+    console.log(finalResult.value);
+    console.log(txtFieldInput.value);
+    console.log(barcodeScanInput.value);
     return;
   }
 }
@@ -174,81 +198,128 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
 
 <template>
   <!-- This is where we want the scan with camera and possibly the manual input button as well -->
-  <NuxtLayout class="overflow-x-hidden">
-    <VApp>
-      <VAppBar location="top" color="orange-darken-3">
-        <template v-slot:prepend>
-          <VAppBarNavIcon></VAppBarNavIcon>
-        </template>
 
-        <template v-slot:append>
+  <VApp>
+    <VAppBar location="top" color="orange-darken-3">
+      <template v-slot:prepend>
+        <VAppBarNavIcon></VAppBarNavIcon>
+      </template>
+
+      <template v-slot:append>
+        <VBtn
+          @click="overlay = !overlay"
+          size="small"
+          variant="elevated"
+          class="mr-4"
+          color="black"
+        >
+          Use Camera
+        </VBtn>
+      </template>
+    </VAppBar>
+    <!-------------------------------------------------------------->
+
+    <!-- This is where we want the main content to be. So where the product data is displayed before search has to be pressed (possibly having them chose what format it is for it to be automatic/delay check) -->
+    <VMain>
+      <VRow>
+        <VCol cols="12" class="text-center mt-12">
+          <p class="text-h7">Please scan</p>
+        </VCol>
+        <VCol cols="12" class="text-center"
+          ><VDivider class="my-7"> OR</VDivider>
+        </VCol>
+        <VCol cols="12" class="text-center">
+          <p class="text-h7">Enter details</p>
+        </VCol>
+        <VCol cols="12">
+          <VTextField
+            class="mt-8"
+            variant="solo"
+            label="Barcode Number"
+            v-model="txtFieldInput"
+          ></VTextField>
+        </VCol>
+
+        <VCol cols="12" class="mb-8 text-center">
           <VBtn
-            @click="overlay = !overlay"
             size="small"
-            variant="elevated"
-            class="mr-4"
-            color="black"
+            class="mx-2"
+            color="green"
+            @click="barcodeSubmit(txtFieldInput)"
           >
-            Use Camera
+            Search
           </VBtn>
-        </template>
-      </VAppBar>
-      <!-------------------------------------------------------------->
-
-      <!-- This is where we want the main content to be. So where the product data is displayed before search has to be pressed (possibly having them chose what format it is for it to be automatic/delay check) -->
-      <VMain class="overflow-x-hidden">
-        <VRow>
-          <VCol cols="12" class="text-center mt-12">
-            <p v-for="value in cameraResults" :key="value.rawValue">
-              {{ value.rawValue }} & {{ value.format }}
-            </p>
-          </VCol>
-          <VCol cols="12" class="text-center mt-12">
-            <h4>PLEASE SCAN</h4>
-          </VCol>
-          <VCol cols="12" class="text-center"
-            ><VDivider class="my-12"> OR</VDivider>
-          </VCol>
-          <VCol cols="12" class="text-center">
-            <h4>Enter Details</h4>
-          </VCol>
-          <VCol cols="fill">
-            <VTextField
-              class="mt-8"
-              variant="solo"
-              label="Barcode Number"
-              v-model="txtFieldResult"
-            ></VTextField>
-            <!-- potentially change the v-model to the raw value of the detectedBarcode somehow -->
-          </VCol>
-
-          <VCol cols="12" class="text-center">
-            <VBtn
-              size="small"
-              class="mx-2"
-              color="green"
-              @click="barcodeSubmit(txtFieldResult)"
-            >
-              Search
-            </VBtn>
-            <VBtn size="small" @click="clearAll()" class="mx-2" color="grey">
-              Clear
-            </VBtn>
-          </VCol>
+          <VBtn
+            size="small"
+            @click="clearAll()"
+            class="mx-2 text-center"
+            color="grey"
+          >
+            Clear
+          </VBtn>
+        </VCol>
+        <VCol cols="12">
           <VOverlay v-model="overlay">
-            <VBtn @click="overlay = false" location="top left"> Close </VBtn>
             <!-- This is the scanner for barcodes/qr codes. Camera automatically turns off when the overlay disappears. Currently set to qr and ean 13 codes -->
             <QrcodeStream
-              :formats="['qr_code', 'ean_13']"
+              class="border-lg border-success border-opacity-100 mt-2"
+              :formats="[
+                'aztec',
+                'code_128',
+                'code_39',
+                'code_93',
+                'codabar',
+                'databar',
+                'databar_expanded',
+                'data_matrix',
+                'dx_film_edge',
+                'ean_13',
+                'ean_8',
+                'itf',
+                'maxi_code',
+                'micro_qr_code',
+                'pdf417',
+                'qr_code',
+                'rm_qr_code',
+                'upc_a',
+                'upc_e',
+                'linear_codes',
+                'matrix_codes',
+                'unknown',
+              ]"
               @detect="onDetect"
               :track="paintBoundingBox"
               @error="onError"
               :paused="paused"
-            ></QrcodeStream>
-            <!-- Check whether it does recognise the other formats except for qr codes-->
+            >
+              <VBtn
+                @click="overlay = false"
+                class="mt-0 position-absolute right-0 rounded-xl opacity-80"
+              >
+                Close</VBtn
+              ></QrcodeStream
+            >
+            <!-- Check whether it does recognise the other formats-->
           </VOverlay>
-        </VRow>
-      </VMain>
-    </VApp>
-  </NuxtLayout>
+        </VCol>
+        <VCol cols="12">
+          <VDivider class="my-12" v-if="finalResult.length"
+            >CURRENT LIST</VDivider
+          >
+
+          <VCol cols="12">
+            <p
+              v-for="scannedItems in finalResult"
+              :key="scannedItems.BarNumber"
+              class="text-center"
+            >
+              Barcode Number: {{ scannedItems.BarNumber }} <br />
+              Format: {{ scannedItems.format }} <br />
+              <br />
+            </p>
+          </VCol>
+        </VCol>
+      </VRow>
+    </VMain>
+  </VApp>
 </template>
