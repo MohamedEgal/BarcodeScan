@@ -4,10 +4,12 @@ const props = defineProps<{
   txtFieldCheck: string;
 }>();
 
+const emit = defineEmits<{
+  (e: "checkField", payload: string): void;
+}>();
+
 // ------------------------- CONST ---------------------------
-const barcodeScanInput = ref("");
 const txtFieldCheck = ref(props.txtFieldCheck);
-const txtFieldInput = ref(txtFieldCheck);
 const txtResult = ref(props.finalResults);
 const barcodeFormats = {
   UPC_A: 12,
@@ -22,6 +24,10 @@ const barcodeFormats = {
   ITF: 14,
   GS1: 17,
 };
+
+watch(txtFieldCheck, (newVal) => {
+  emit("checkField", newVal);
+});
 
 // --------------------Check barcode format ------------------------
 function checkBarcodeFormat(newResult: string) {
@@ -65,8 +71,7 @@ function barcodeSubmit(barScan: string) {
         txtResult.value[txtResult.value.length - 1].format
     );
     console.log(txtResult.value);
-    console.log(txtFieldInput.value);
-    console.log(barcodeScanInput.value);
+    console.log(txtFieldCheck.value);
     return {
       BarNumber: txtResult.value[txtResult.value.length - 1].BarNumber,
       format: txtResult.value[txtResult.value.length - 1].format,
@@ -75,8 +80,7 @@ function barcodeSubmit(barScan: string) {
 }
 // -------------------Clear all input fields -------------------
 function clearAll() {
-  barcodeScanInput.value = "";
-  txtFieldInput.value = "";
+  txtFieldCheck.value = "";
   txtResult.value = [];
 }
 </script>
@@ -86,12 +90,12 @@ function clearAll() {
     <p class="text-h7">Enter details</p>
   </VCol>
   <VCol cols="12">
-    <VForm @submit.prevent="$emit('inpFieldCheck', txtFieldCheck)">
+    <VForm @submit.prevent="barcodeSubmit(txtFieldCheck)">
       <VTextField
         class="mt-8"
         variant="solo"
         label="Barcode Number"
-        v-model="txtFieldInput"
+        v-model="txtFieldCheck"
       ></VTextField>
     </VForm>
   </VCol>
@@ -101,7 +105,7 @@ function clearAll() {
       size="small"
       class="mx-2"
       color="green"
-      @click="barcodeSubmit(txtFieldInput)"
+      @click="barcodeSubmit(txtFieldCheck)"
     >
       Search
     </VBtn>

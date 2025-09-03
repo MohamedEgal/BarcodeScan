@@ -3,7 +3,6 @@
 defineProps<{
   cameraCheck: boolean;
   scannerCheck: boolean;
-  overlay: boolean;
   finalResults: { BarNumber: string; format: string }[];
 }>();
 
@@ -19,17 +18,15 @@ const txtFieldCheck = ref("");
   <CameraInput
     v-if="cameraCheck"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
-    @overlay-screen="emit('overlayScreen', $event)"
     :final-results="finalResults"
-    :overlay="overlay"
   />
   <VCol cols="12" class="text-center" v-if="cameraCheck">
     <VDivider class="my-7"> OR</VDivider>
   </VCol>
 
   <TxtInput
-    @inpFieldCheck="txtFieldCheck"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
+    @check-field="txtFieldCheck = $event"
     :final-results="finalResults"
     :txt-field-check="txtFieldCheck"
   />
@@ -40,7 +37,7 @@ const txtFieldCheck = ref("");
   <ScannerInput
     v-if="scannerCheck"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
-    @inp-field-check="txtFieldCheck.toString"
+    @check-field="txtFieldCheck = $event"
     :final-results="finalResults"
     :txt-field-check="txtFieldCheck"
   />

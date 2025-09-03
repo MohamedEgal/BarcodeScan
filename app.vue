@@ -3,9 +3,8 @@
 
 const finalResult = ref<{ BarNumber: string; format: string }[]>([]);
 const txtFieldCheck = ref("");
-const scannerCheck = ref(false);
+const scannerCheck = ref(true);
 const cameraCheck = ref(true);
-const overlay = ref(false);
 
 // -------------------------ONMOUNTED START (Pls don't judge) -------------------------
 </script>
@@ -31,10 +30,8 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
         <Barcode
           :scannerCheck="scannerCheck"
           :cameraCheck="cameraCheck"
-          :overlay="overlay"
           :txt-field-check="txtFieldCheck"
           :finalResults="finalResult"
-          @overlay-screen="overlay = $event"
           ;
         />
 

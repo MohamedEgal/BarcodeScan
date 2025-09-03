@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const emit = defineEmits<{
   (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
-  (e: "inpFieldCheck", payload: string): void;
+  (e: "checkField", payload: string): void;
 }>();
 
 interface BarcodeResult {
@@ -14,7 +14,6 @@ const props = defineProps<{
 }>();
 
 const scanResult = ref(props.finalResults);
-const txtFieldCheck = ref(props.txtFieldCheck);
 const barcodeScanInput = ref("");
 const barcodeFormats = {
   UPC_A: 12,
@@ -47,15 +46,26 @@ function checkBarcodeFormat(newResult: string) {
 }
 
 function logKey(event: KeyboardEvent) {
-  if (txtFieldCheck.value.length) {
+  if (props.txtFieldCheck.length) {
     barcodeScanInput.value = "";
-    emit("inpFieldCheck", (txtFieldCheck.value = ""));
+  }
+
+  if (barcodeScanInput.value.length) {
+    emit("checkField", "");
+  }
+
+  if (event.key === "Backspace") {
+    barcodeScanInput.value = barcodeScanInput.value.slice(0, -1);
+    return;
+  }
+  if (event.key === "Enter" && !barcodeScanInput.value.length) {
+    return;
   }
 
   if (
     event.key === "Enter" &&
     barcodeScanInput.value.length &&
-    !txtFieldCheck.value.length
+    !props.txtFieldCheck.length
   ) {
     barcodeSubmit(barcodeScanInput.value);
     barcodeScanInput.value = "";
@@ -65,11 +75,17 @@ function logKey(event: KeyboardEvent) {
   if (
     event.key === "Enter" &&
     !barcodeScanInput.value.length &&
-    !txtFieldCheck.value.length
+    !props.txtFieldCheck.length
   ) {
     alert("No Barcode Detected");
     return;
   }
+
+  if (event.key === undefined) {
+    return;
+  }
+  console.log("Barcode Scan: " + barcodeScanInput.value);
+  console.log("Text Field: " + props.txtFieldCheck);
 
   barcodeScanInput.value += event.key;
 }
@@ -106,6 +122,7 @@ function barcodeSubmit(barScan: string) {
     );
     console.log(scanResult.value);
     console.log(barcodeScanInput.value);
+    return;
   }
 }
 </script>

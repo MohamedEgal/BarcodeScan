@@ -22,7 +22,6 @@ function onError(error: EmittedError) {
   errorMessage.value = error.message;
   alert(error.message);
   overlay.value = false;
-  emit("overlayScreen", overlay.value);
 }
 
 interface BarcodeResult {
@@ -31,18 +30,16 @@ interface BarcodeResult {
 }
 
 const props = defineProps<{
-  overlay: boolean;
   finalResults: BarcodeResult[];
 }>();
 
 const emit = defineEmits<{
   (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
-  (e: "overlayScreen", payload: boolean): void;
 }>();
 
 const errorMessage = ref("");
 
-const overlay = ref(props.overlay);
+const overlay = ref(false);
 const paused = ref(false);
 const camResult = ref(props.finalResults);
 
@@ -66,10 +63,9 @@ function onDetect(result: DetectedBarcode[]) {
 
   for (const existingBarcode of camResult.value) {
     if (existingBarcode.BarNumber === newBarcode.rawValue.toString()) {
-      overlay.value = true;
-      emit("overlayScreen", overlay.value);
-      paused.value = false;
       alert("Barcode already added");
+      paused.value = false;
+      overlay.value = false;
       return;
     }
   }
@@ -80,7 +76,6 @@ function onDetect(result: DetectedBarcode[]) {
 
   overlay.value = false;
   paused.value = false;
-  emit("overlayScreen", overlay.value);
 
   alert(
     "Barcode: " +
