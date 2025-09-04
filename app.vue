@@ -1,12 +1,10 @@
 <script setup lang="ts">
-// -------------------------- IMPORTS--------------------------
+// -------------------------- CONST--------------------------
 
 const finalResult = ref<{ BarNumber: string; format: string }[]>([]);
-const txtFieldCheck = ref("");
-const scannerCheck = ref(true);
-const cameraCheck = ref(true);
-
-// -------------------------ONMOUNTED START (Pls don't judge) -------------------------
+const scannerShow = ref(true);
+const cameraShow = ref(true);
+const textFieldShow = ref(true);
 </script>
 
 <!-- IMPORTANT: Plan is to have a manual input field for the user to either type in or let the scanner automatically fill it.
@@ -14,27 +12,30 @@ Depending on the scanner, Zebra devices might need to use DataWedge to ensure da
 Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be used for the barcode scanning for the user to enter through the camera-->
 
 <template>
-  <!-- This is where we want the scan with camera and possibly the manual input button as well -->
-
   <VApp>
     <VAppBar location="top" color="orange-darken-3">
       <template v-slot:prepend>
         <VAppBarNavIcon></VAppBarNavIcon>
       </template>
     </VAppBar>
-    <!-------------------------------------------------------------->
 
-    <!-- This is where we want the main content to be. So where the product data is displayed before search has to be pressed (possibly having them chose what format it is for it to be automatic/delay check) -->
+    <!-- Main Content: All components are rendered depending on the three variables: scannerShow, cameraShow and textFieldShow -->
     <VMain>
       <VRow>
         <Barcode
-          :scannerCheck="scannerCheck"
-          :cameraCheck="cameraCheck"
-          :txt-field-check="txtFieldCheck"
+          :scannerShow="scannerShow"
+          :cameraShow="cameraShow"
+          :textFieldShow="textFieldShow"
           :finalResults="finalResult"
-          ;
+          @barcodeSubmit="
+            finalResult.push({
+              BarNumber: $event.BarNumber,
+              format: $event.format,
+            })
+          "
         />
 
+        <!-- List items scanned -->
         <VCol cols="12">
           <VDivider class="my-12" v-if="finalResult.length"
             >CURRENT LIST</VDivider

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const emit = defineEmits<{
   (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
-  (e: "checkField", payload: string): void;
 }>();
 
 interface BarcodeResult {
@@ -13,7 +12,6 @@ const props = defineProps<{
   txtFieldCheck: string;
 }>();
 
-const scanResult = ref(props.finalResults);
 const barcodeScanInput = ref("");
 const barcodeFormats = {
   UPC_A: 12,
@@ -48,10 +46,9 @@ function checkBarcodeFormat(newResult: string) {
 function logKey(event: KeyboardEvent) {
   if (props.txtFieldCheck.length) {
     barcodeScanInput.value = "";
-  }
+    console.log("Text Field: " + props.txtFieldCheck);
 
-  if (barcodeScanInput.value.length) {
-    emit("checkField", "");
+    return;
   }
 
   if (event.key === "Backspace") {
@@ -63,9 +60,10 @@ function logKey(event: KeyboardEvent) {
   }
 
   if (
-    event.key === "Enter" &&
-    barcodeScanInput.value.length &&
-    !props.txtFieldCheck.length
+    (event.key === "Enter" &&
+      barcodeScanInput.value.length &&
+      !props.txtFieldCheck.length) ||
+    props.txtFieldCheck == null
   ) {
     barcodeSubmit(barcodeScanInput.value);
     barcodeScanInput.value = "";
@@ -81,25 +79,23 @@ function logKey(event: KeyboardEvent) {
     return;
   }
 
-  if (event.key === undefined) {
-    return;
-  }
+  // if (event.key === undefined) {
+  //   return;
+  // }
   console.log("Barcode Scan: " + barcodeScanInput.value);
-  console.log("Text Field: " + props.txtFieldCheck);
-
   barcodeScanInput.value += event.key;
 }
 
 // -------------------------ONMOUNTED START (Pls don't judge) -------------------------
 
 onMounted(() => {
-  window.addEventListener("keydown", logKey);
+  window.addEventListener("keyup", logKey);
 });
 
 //--------------------- Barcode scanner submit ----------------------
 
 function barcodeSubmit(barScan: string) {
-  for (const existingBarcode of scanResult.value) {
+  for (const existingBarcode of props.finalResults) {
     if (existingBarcode.BarNumber === barScan) {
       alert("Barcode already added");
       return;
@@ -110,19 +106,11 @@ function barcodeSubmit(barScan: string) {
     return;
   }
   if (format) {
-    scanResult.value.push({
+    emit("barcodeSubmit", {
       BarNumber: barScan,
       format: format,
     });
-    alert(
-      "Submitted: " +
-        scanResult.value[scanResult.value.length - 1].BarNumber +
-        ". Format: " +
-        scanResult.value[scanResult.value.length - 1].format
-    );
-    console.log(scanResult.value);
-    console.log(barcodeScanInput.value);
-    return;
+    alert("Submitted: " + barScan + ". Format: " + format);
   }
 }
 </script>

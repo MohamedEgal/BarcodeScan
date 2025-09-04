@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { VTextField } from "vuetify/components";
+
 const props = defineProps<{
   finalResults: { BarNumber: string; format: string }[];
   txtFieldCheck: string;
@@ -6,11 +8,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "checkField", payload: string): void;
+  (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
 }>();
 
 // ------------------------- CONST ---------------------------
-const txtFieldCheck = ref(props.txtFieldCheck);
-const txtResult = ref(props.finalResults);
+const txtFieldCheck = ref("");
 const barcodeFormats = {
   UPC_A: 12,
   UPC_E: 6,
@@ -49,7 +51,7 @@ function checkBarcodeFormat(newResult: string) {
 //--------------------- Barcode scanner submit ----------------------
 
 function barcodeSubmit(barScan: string) {
-  for (const existingBarcode of txtResult.value) {
+  for (const existingBarcode of props.finalResults) {
     if (existingBarcode.BarNumber === barScan) {
       alert("Barcode already added");
       return;
@@ -60,28 +62,18 @@ function barcodeSubmit(barScan: string) {
     return;
   }
   if (format) {
-    txtResult.value.push({
+    emit("barcodeSubmit", {
       BarNumber: barScan,
       format: format,
     });
-    alert(
-      "Submitted: " +
-        txtResult.value[txtResult.value.length - 1].BarNumber +
-        ". Format: " +
-        txtResult.value[txtResult.value.length - 1].format
-    );
-    console.log(txtResult.value);
+
     console.log(txtFieldCheck.value);
-    return {
-      BarNumber: txtResult.value[txtResult.value.length - 1].BarNumber,
-      format: txtResult.value[txtResult.value.length - 1].format,
-    };
   }
 }
 // -------------------Clear all input fields -------------------
 function clearAll() {
+  console.log(txtFieldCheck.value);
   txtFieldCheck.value = "";
-  txtResult.value = [];
 }
 </script>
 
@@ -96,6 +88,8 @@ function clearAll() {
         variant="solo"
         label="Barcode Number"
         v-model="txtFieldCheck"
+        clearable
+        @click:clear="clearAll"
       ></VTextField>
     </VForm>
   </VCol>

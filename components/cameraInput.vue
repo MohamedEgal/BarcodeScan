@@ -5,6 +5,7 @@ import {
   type DetectedBarcode,
   type EmittedError,
 } from "vue-qrcode-reader";
+
 function onError(error: EmittedError) {
   if (error.name === "NotAllowedError") {
     console.log("Camera access denied");
@@ -61,7 +62,7 @@ function onDetect(result: DetectedBarcode[]) {
   paused.value = true;
   const newBarcode = result[0];
 
-  for (const existingBarcode of camResult.value) {
+  for (const existingBarcode of props.finalResults) {
     if (existingBarcode.BarNumber === newBarcode.rawValue.toString()) {
       alert("Barcode already added");
       paused.value = false;
@@ -69,7 +70,7 @@ function onDetect(result: DetectedBarcode[]) {
       return;
     }
   }
-  camResult.value.push({
+  emit("barcodeSubmit", {
     BarNumber: newBarcode.rawValue,
     format: newBarcode.format,
   });
