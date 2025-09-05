@@ -4,9 +4,7 @@ import type { BarcodeResult } from "~/types/BarcodeModule";
 import { checkBarcodeFormat } from "#imports";
 
 // Emits
-const emit = defineEmits({
-  barcodeSubmit: (result: BarcodeResult) => false,
-});
+const emit = defineEmits(["barcodeSubmit"]);
 
 // Const
 const barcodeScanInput = ref("");

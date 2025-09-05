@@ -50,7 +50,6 @@ function toggleSwitch(toggle: string) {
             :moduleShow="
               toggles.find(t => t.showBoolean)?.name as 'Scanner' | 'Camera' | 'Input' | undefined
             "
-            :finalResults="finalResult"
             @barcodeSubmit="
               finalResult.push({
                 barNumber: $event.barNumber,

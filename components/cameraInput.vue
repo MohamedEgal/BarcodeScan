@@ -29,10 +29,7 @@ function onError(error: EmittedError) {
 }
 
 // Emit
-const emit = defineEmits({
-  barcodeSubmit: (result: BarcodeResult) => false,
-});
-
+const emit = defineEmits(["barcodeSubmit"]);
 // Const
 const errorMessage = ref("");
 const overlay = ref(false);
@@ -82,7 +79,7 @@ function onDetect(result: DetectedBarcode[]) {
 
   emit("barcodeSubmit", {
     barNumber: newBarcode.rawValue,
-    format: newBarcode.format,
+    format: newBarcode.format.toUpperCase(),
   });
 
   overlay.value = false;

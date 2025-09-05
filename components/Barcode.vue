@@ -6,10 +6,7 @@ defineProps<{
 }>();
 
 // Define emit
-const emit = defineEmits({
-  barcodeSubmit: (result: BarcodeResult) => false,
-});
-
+const emit = defineEmits(["barcodeSubmit"]);
 // Const for the text field (Need barcode scanner to read this in case both need to be functional)
 const textField = ref("");
 </script>
@@ -30,13 +27,11 @@ const textField = ref("");
   <TxtInput
     v-if="moduleShow === 'Input'"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
-    :text-field="textField"
   />
 
   <!-- Scanner module -->
   <ScannerInput
     v-if="moduleShow === 'Scanner'"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
-    :text-field="textField"
   />
 </template>
