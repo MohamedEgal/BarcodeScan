@@ -1,47 +1,46 @@
 <script setup lang="ts">
+// Define Props
 defineProps<{
-  cameraShow: boolean;
-  scannerShow: boolean;
-  textFieldShow: boolean;
-  finalResults: { BarNumber: string; format: string }[];
+  moduleShow: "Scanner" | "Camera" | "Input" | undefined;
+  finalResults: { barNumber: string; format: string }[];
 }>();
 
+// Define emit
 const emit = defineEmits<{
-  (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
+  (e: "barcodeSubmit", payload: { barNumber: string; format: string }): void;
 }>();
 
-const txtFieldCheck = ref("");
+// Const for the text field (Need barcode scanner to read this in case both need to be functional)
+const textField = ref("");
 </script>
 
 <template>
+  <!-- Error -->
+  <p class="text-center" v-if="!moduleShow">
+    Error: moduleShow variable not configured
+  </p>
+
+  <!-- Camera Module -->
   <CameraInput
-    v-if="cameraShow"
+    v-if="moduleShow === 'Camera'"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
     :final-results="finalResults"
   />
-  <VCol cols="12" class="text-center" v-if="cameraShow && textFieldShow">
-    <VDivider class="my-7"> OR</VDivider>
-  </VCol>
 
+  <!-- Text Input module -->
   <TxtInput
-    v-if="textFieldShow"
+    v-if="moduleShow === 'Input'"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
-    @check-field="txtFieldCheck = $event"
+    @check-field="textField = $event"
     :final-results="finalResults"
-    :txt-field-check="txtFieldCheck"
+    :text-field="textField"
   />
-  <VCol
-    cols="12"
-    class="text-center"
-    v-if="(scannerShow && textFieldShow) || (scannerShow && cameraShow)"
-  >
-    <VDivider class="my-7"> OR</VDivider>
-  </VCol>
 
+  <!-- Scanner module -->
   <ScannerInput
-    v-if="scannerShow"
+    v-if="moduleShow === 'Scanner'"
     @barcodeSubmit="emit('barcodeSubmit', $event)"
     :final-results="finalResults"
-    :txt-field-check="txtFieldCheck"
+    :text-field="textField"
   />
 </template>

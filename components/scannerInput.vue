@@ -1,52 +1,26 @@
 <script setup lang="ts">
-const emit = defineEmits<{
-  (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
-}>();
+// Imports
+import type { BarcodeResult } from "~/types/BarcodeModule";
+import { checkBarcodeFormat } from "#imports";
 
-interface BarcodeResult {
-  BarNumber: string;
-  format: string;
-}
+// Emits
+const emit = defineEmits({
+  barcodeSubmit: (result: BarcodeResult) => false,
+});
+
+// Props
 const props = defineProps<{
-  finalResults: BarcodeResult[];
-  txtFieldCheck: string;
+  finalResults: readonly BarcodeResult[];
+  textField: string;
 }>();
 
+// Const
 const barcodeScanInput = ref("");
-const barcodeFormats = {
-  UPC_A: 12,
-  UPC_E: 6,
-  QR_CODE: 8,
-  EAN_13: 13,
-  EAN_8: 8,
-  CODE_39: 39,
-  CODE_93: 93,
-  CODE_128: 128,
-  CODABAR: 16,
-  ITF: 14,
-  GS1: 17,
-};
-// --------------------Check barcode format ------------------------
-function checkBarcodeFormat(newResult: string) {
-  let format: keyof typeof barcodeFormats | undefined;
 
-  for (const [key, value] of Object.entries(barcodeFormats)) {
-    if (value === newResult.length) {
-      format = key as keyof typeof barcodeFormats;
-    }
-  }
-  if (!format || undefined) {
-    alert("Invalid barcode format");
-    return;
-  }
-
-  return format;
-}
-
+// Capture keypresses and handle the logic of it
 function logKey(event: KeyboardEvent) {
-  if (props.txtFieldCheck.length) {
+  if (props.textField.length) {
     barcodeScanInput.value = "";
-    console.log("Text Field: " + props.txtFieldCheck);
 
     return;
   }
@@ -56,47 +30,37 @@ function logKey(event: KeyboardEvent) {
     return;
   }
   if (event.key === "Enter" && !barcodeScanInput.value.length) {
+    alert("No Barcode Detected");
     return;
   }
 
   if (
-    (event.key === "Enter" &&
-      barcodeScanInput.value.length &&
-      !props.txtFieldCheck.length) ||
-    props.txtFieldCheck == null
+    event.key === "Enter" &&
+    barcodeScanInput.value.length &&
+    !props.textField.length
   ) {
     barcodeSubmit(barcodeScanInput.value);
     barcodeScanInput.value = "";
     return;
   }
 
-  if (
-    event.key === "Enter" &&
-    !barcodeScanInput.value.length &&
-    !props.txtFieldCheck.length
-  ) {
-    alert("No Barcode Detected");
-    return;
-  }
-
-  // if (event.key === undefined) {
-  //   return;
-  // }
-  console.log("Barcode Scan: " + barcodeScanInput.value);
   barcodeScanInput.value += event.key;
 }
 
-// -------------------------ONMOUNTED START (Pls don't judge) -------------------------
+// -------------------------ONMOUNTED/ONUNMOUNTED (Pls don't judge) -------------------------
 
 onMounted(() => {
   window.addEventListener("keyup", logKey);
+});
+onUnmounted(() => {
+  window.removeEventListener("keyup", logKey);
 });
 
 //--------------------- Barcode scanner submit ----------------------
 
 function barcodeSubmit(barScan: string) {
   for (const existingBarcode of props.finalResults) {
-    if (existingBarcode.BarNumber === barScan) {
+    if (existingBarcode.barNumber === barScan) {
       alert("Barcode already added");
       return;
     }
@@ -107,7 +71,7 @@ function barcodeSubmit(barScan: string) {
   }
   if (format) {
     emit("barcodeSubmit", {
-      BarNumber: barScan,
+      barNumber: barScan,
       format: format,
     });
     alert("Submitted: " + barScan + ". Format: " + format);
@@ -116,6 +80,7 @@ function barcodeSubmit(barScan: string) {
 </script>
 
 <template>
+  <!-- No need to explain -->
   <VCol cols="12" class="text-center mt-12">
     <p class="text-h7">Please scan</p>
   </VCol>

@@ -1,58 +1,38 @@
 <script setup lang="ts">
-import { VTextField } from "vuetify/components";
+// Imports
+import type { BarcodeResult } from "~/types/BarcodeModule";
+import { checkBarcodeFormat } from "#imports";
 
+// Props
 const props = defineProps<{
-  finalResults: { BarNumber: string; format: string }[];
-  txtFieldCheck: string;
+  finalResults: readonly BarcodeResult[];
+  textField: string;
 }>();
 
-const emit = defineEmits<{
-  (e: "checkField", payload: string): void;
-  (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
-}>();
-
-// ------------------------- CONST ---------------------------
-const txtFieldCheck = ref("");
-const barcodeFormats = {
-  UPC_A: 12,
-  UPC_E: 6,
-  QR_CODE: 8,
-  EAN_13: 13,
-  EAN_8: 8,
-  CODE_39: 39,
-  CODE_93: 93,
-  CODE_128: 128,
-  CODABAR: 16,
-  ITF: 14,
-  GS1: 17,
-};
-
-watch(txtFieldCheck, (newVal) => {
-  emit("checkField", newVal);
+// Emits
+const emits = defineEmits({
+  checkField: (input: string) => false,
+  barcodeSubmit: (result: BarcodeResult) => false,
 });
 
-// --------------------Check barcode format ------------------------
-function checkBarcodeFormat(newResult: string) {
-  let format: keyof typeof barcodeFormats | undefined;
+// ------------------------- CONST ---------------------------
+const textField = ref("");
 
-  for (const [key, value] of Object.entries(barcodeFormats)) {
-    if (value === newResult.length) {
-      format = key as keyof typeof barcodeFormats;
-    }
-  }
-  if (!format || undefined) {
-    alert("Invalid barcode format");
-    return;
-  }
+// watch(textField, (newVal) => {
+//   emit("checkField", newVal);
+// });
 
-  return format;
-}
+//!!! ^^^^ Put this back if textfield and scanner both runs at the same time
 
 //--------------------- Barcode scanner submit ----------------------
 
 function barcodeSubmit(barScan: string) {
+  if (!barScan.length) {
+    alert("No Barcode Detected");
+    return;
+  }
   for (const existingBarcode of props.finalResults) {
-    if (existingBarcode.BarNumber === barScan) {
+    if (existingBarcode.barNumber === barScan) {
       alert("Barcode already added");
       return;
     }
@@ -62,44 +42,44 @@ function barcodeSubmit(barScan: string) {
     return;
   }
   if (format) {
-    emit("barcodeSubmit", {
-      BarNumber: barScan,
+    emits("barcodeSubmit", {
+      barNumber: barScan,
       format: format,
     });
-
-    console.log(txtFieldCheck.value);
   }
 }
-// -------------------Clear all input fields -------------------
+
+// -------------------Clear input field -------------------
 function clearAll() {
-  console.log(txtFieldCheck.value);
-  txtFieldCheck.value = "";
+  textField.value = "";
 }
 </script>
 
 <template>
+  <!-- Form with text field -->
   <VCol cols="12" class="text-center">
     <p class="text-h7">Enter details</p>
   </VCol>
   <VCol cols="12">
-    <VForm @submit.prevent="barcodeSubmit(txtFieldCheck)">
+    <VForm @submit.prevent="barcodeSubmit(textField)">
       <VTextField
         class="mt-8"
         variant="solo"
         label="Barcode Number"
-        v-model="txtFieldCheck"
+        v-model="textField"
         clearable
         @click:clear="clearAll"
       ></VTextField>
     </VForm>
   </VCol>
 
+  <!-- Buttons to search and clear -->
   <VCol cols="12" class="mb-8 text-center">
     <VBtn
       size="small"
       class="mx-2"
       color="green"
-      @click="barcodeSubmit(txtFieldCheck)"
+      @click="barcodeSubmit(textField)"
     >
       Search
     </VBtn>

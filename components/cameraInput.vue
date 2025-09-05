@@ -1,11 +1,14 @@
 <script setup lang="ts">
+// Imports
 import {
   QrcodeStream,
   type BarcodeFormat,
   type DetectedBarcode,
   type EmittedError,
 } from "vue-qrcode-reader";
+import type { BarcodeResult } from "~/types/BarcodeModule";
 
+// If the camera scanning errors
 function onError(error: EmittedError) {
   if (error.name === "NotAllowedError") {
     console.log("Camera access denied");
@@ -25,24 +28,45 @@ function onError(error: EmittedError) {
   overlay.value = false;
 }
 
-interface BarcodeResult {
-  BarNumber: string;
-  format: string;
-}
-
+// Prop
 const props = defineProps<{
   finalResults: BarcodeResult[];
 }>();
 
+// Emit
 const emit = defineEmits<{
-  (e: "barcodeSubmit", payload: { BarNumber: string; format: string }): void;
+  (e: "barcodeSubmit", payload: { barNumber: string; format: string }): void;
 }>();
 
+// Const
 const errorMessage = ref("");
-
 const overlay = ref(false);
 const paused = ref(false);
 const camResult = ref(props.finalResults);
+const formatsCamera: BarcodeFormat[] = [
+  "aztec",
+  "code_128",
+  "code_39",
+  "code_93",
+  "codabar",
+  "databar",
+  "databar_expanded",
+  "data_matrix",
+  "dx_film_edge",
+  "ean_13",
+  "ean_8",
+  "itf",
+  "maxi_code",
+  "micro_qr_code",
+  "pdf417",
+  "qr_code",
+  "rm_qr_code",
+  "upc_a",
+  "upc_e",
+  "linear_codes",
+  "matrix_codes",
+  "unknown",
+];
 
 // ------------------------PaintBoxThingy for Camera -----------------------
 function paintBoundingBox(detectedCodes: any, ctx: CanvasRenderingContext2D) {
@@ -57,13 +81,13 @@ function paintBoundingBox(detectedCodes: any, ctx: CanvasRenderingContext2D) {
   }
 }
 
-// -------------------------DETECTION START -------------------------
+// -------------------------Ondetect (when the camera has detected the barcode) -------------------------
 function onDetect(result: DetectedBarcode[]) {
   paused.value = true;
   const newBarcode = result[0];
 
   for (const existingBarcode of props.finalResults) {
-    if (existingBarcode.BarNumber === newBarcode.rawValue.toString()) {
+    if (existingBarcode.barNumber === newBarcode.rawValue.toString()) {
       alert("Barcode already added");
       paused.value = false;
       overlay.value = false;
@@ -71,7 +95,7 @@ function onDetect(result: DetectedBarcode[]) {
     }
   }
   emit("barcodeSubmit", {
-    BarNumber: newBarcode.rawValue,
+    barNumber: newBarcode.rawValue,
     format: newBarcode.format,
   });
 
@@ -80,20 +104,16 @@ function onDetect(result: DetectedBarcode[]) {
 
   alert(
     "Barcode: " +
-      camResult.value[camResult.value.length - 1].BarNumber +
+      camResult.value[camResult.value.length - 1].barNumber +
       "\nFormat: " +
       camResult.value[camResult.value.length - 1].format
   );
-  return emit("barcodeSubmit", {
-    BarNumber: camResult.value[camResult.value.length - 1].BarNumber,
-    format: camResult.value[camResult.value.length - 1].format,
-  });
+  return;
 }
-
-// -----------------------Submitted Camera Scan ---------------------
 </script>
 
 <template>
+  <!-- Button to activate the camera scan -->
   <VCol cols="12" class="text-center mt-10 mx-2">
     <VBtn
       @click="overlay = !overlay"
@@ -106,35 +126,13 @@ function onDetect(result: DetectedBarcode[]) {
     </VBtn>
   </VCol>
 
+  <!-- Overlay with the camera module -->
   <VCol cols="12">
     <VOverlay v-model="overlay">
       <!-- This is the scanner for barcodes/qr codes. Camera automatically turns off when the overlay disappears. Currently set to qr and ean 13 codes -->
       <QrcodeStream
         class="border-lg border-success border-opacity-100 mt-2"
-        :formats="[
-          'aztec',
-          'code_128',
-          'code_39',
-          'code_93',
-          'codabar',
-          'databar',
-          'databar_expanded',
-          'data_matrix',
-          'dx_film_edge',
-          'ean_13',
-          'ean_8',
-          'itf',
-          'maxi_code',
-          'micro_qr_code',
-          'pdf417',
-          'qr_code',
-          'rm_qr_code',
-          'upc_a',
-          'upc_e',
-          'linear_codes',
-          'matrix_codes',
-          'unknown',
-        ]"
+        :formats="formatsCamera"
         @detect="onDetect"
         :track="paintBoundingBox"
         @error="onError"
@@ -147,7 +145,6 @@ function onDetect(result: DetectedBarcode[]) {
           Close</VBtn
         ></QrcodeStream
       >
-      <!-- Check whether it does recognise the other formats-->
     </VOverlay>
   </VCol>
 </template>

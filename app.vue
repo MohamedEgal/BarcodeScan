@@ -1,15 +1,23 @@
 <script setup lang="ts">
 // -------------------------- CONST--------------------------
+const finalResult = ref<{ barNumber: string; format: string }[]>([]);
 
-const finalResult = ref<{ BarNumber: string; format: string }[]>([]);
-const scannerShow = ref(true);
-const cameraShow = ref(true);
-const textFieldShow = ref(true);
+const toggles = ref([
+  { name: "Scanner", showBoolean: false },
+  { name: "Camera", showBoolean: false },
+  { name: "Input", showBoolean: false },
+]);
+
+function toggleSwitch(toggle: string) {
+  toggles.value.forEach((element) => {
+    if (element.name === toggle) {
+      return;
+    }
+    element.showBoolean = false;
+  });
+  console.log(toggles);
+}
 </script>
-
-<!-- IMPORTANT: Plan is to have a manual input field for the user to either type in or let the scanner automatically fill it.
-Depending on the scanner, Zebra devices might need to use DataWedge to ensure data is being correctly entered
-Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be used for the barcode scanning for the user to enter through the camera-->
 
 <template>
   <VApp>
@@ -19,21 +27,38 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
       </template>
     </VAppBar>
 
-    <!-- Main Content: All components are rendered depending on the three variables: scannerShow, cameraShow and textFieldShow -->
+    <!-- Main Content: All components are rendered depending on the array of the 3 choices -->
     <VMain>
       <VRow>
-        <Barcode
-          :scannerShow="scannerShow"
-          :cameraShow="cameraShow"
-          :textFieldShow="textFieldShow"
-          :finalResults="finalResult"
-          @barcodeSubmit="
-            finalResult.push({
-              BarNumber: $event.BarNumber,
-              format: $event.format,
-            })
-          "
-        />
+        <VCol v-for="button in toggles" cols="4" class="d-flex justify-center">
+          <VSwitch
+            color="primary"
+            v-model="button.showBoolean"
+            :label="button.name"
+            :trueValue="true"
+            :falseValue="false"
+            :disabled="button.showBoolean"
+            @update:modelValue="toggleSwitch(button.name)"
+          >
+          </VSwitch>
+        </VCol>
+      </VRow>
+      <!-- Switches to choose what to render. Default everything is off first -->
+      <VRow>
+        <VCol cols="12">
+          <Barcode
+            :moduleShow="
+              toggles.find(t => t.showBoolean)?.name as 'Scanner' | 'Camera' | 'Input' | undefined
+            "
+            :finalResults="finalResult"
+            @barcodeSubmit="
+              finalResult.push({
+                barNumber: $event.barNumber,
+                format: $event.format,
+              })
+            "
+          />
+        </VCol>
 
         <!-- List items scanned -->
         <VCol cols="12">
@@ -44,10 +69,10 @@ Otherwise https://github.com/gruhn/vue-qrcode-reader?tab=readme-ov-file will be 
           <VCol cols="12">
             <p
               v-for="scannedItems in finalResult"
-              :key="scannedItems.BarNumber"
+              :key="scannedItems.barNumber"
               class="text-center"
             >
-              Barcode Number: {{ scannedItems.BarNumber }} <br />
+              Barcode Number: {{ scannedItems.barNumber }} <br />
               Format: {{ scannedItems.format }} <br />
               <br />
             </p>
