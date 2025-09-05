@@ -1,4 +1,4 @@
-const barcodeFormats = {
+export const barcodeFormats = {
   UPC_A: 12,
   UPC_E: 6,
   QR_CODE: 8,

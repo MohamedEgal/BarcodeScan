@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { BarcodeResult } from "./types/BarcodeModule";
 // -------------------------- CONST--------------------------
-const finalResult = ref<{ barNumber: string; format: string }[]>([]);
+const finalResult = ref<BarcodeResult[]>([]);
 
 const toggles = ref([
   { name: "Scanner", showBoolean: false },
@@ -15,7 +16,6 @@ function toggleSwitch(toggle: string) {
     }
     element.showBoolean = false;
   });
-  console.log(toggles);
 }
 </script>
 

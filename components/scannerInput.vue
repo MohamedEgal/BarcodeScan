@@ -8,37 +8,17 @@ const emit = defineEmits({
   barcodeSubmit: (result: BarcodeResult) => false,
 });
 
-// Props
-const props = defineProps<{
-  finalResults: readonly BarcodeResult[];
-  textField: string;
-}>();
-
 // Const
 const barcodeScanInput = ref("");
 
 // Capture keypresses and handle the logic of it
 function logKey(event: KeyboardEvent) {
-  if (props.textField.length) {
-    barcodeScanInput.value = "";
-
-    return;
-  }
-
   if (event.key === "Backspace") {
     barcodeScanInput.value = barcodeScanInput.value.slice(0, -1);
     return;
   }
-  if (event.key === "Enter" && !barcodeScanInput.value.length) {
-    alert("No Barcode Detected");
-    return;
-  }
 
-  if (
-    event.key === "Enter" &&
-    barcodeScanInput.value.length &&
-    !props.textField.length
-  ) {
+  if (event.key === "Enter" && barcodeScanInput.value.length) {
     barcodeSubmit(barcodeScanInput.value);
     barcodeScanInput.value = "";
     return;
@@ -59,12 +39,11 @@ onUnmounted(() => {
 //--------------------- Barcode scanner submit ----------------------
 
 function barcodeSubmit(barScan: string) {
-  for (const existingBarcode of props.finalResults) {
-    if (existingBarcode.barNumber === barScan) {
-      alert("Barcode already added");
-      return;
-    }
+  if (!barScan.length) {
+    alert("No Barcode Detected");
+    return;
   }
+
   const format = checkBarcodeFormat(barScan);
   if (!format) {
     return;

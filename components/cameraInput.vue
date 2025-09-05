@@ -28,21 +28,15 @@ function onError(error: EmittedError) {
   overlay.value = false;
 }
 
-// Prop
-const props = defineProps<{
-  finalResults: BarcodeResult[];
-}>();
-
 // Emit
-const emit = defineEmits<{
-  (e: "barcodeSubmit", payload: { barNumber: string; format: string }): void;
-}>();
+const emit = defineEmits({
+  barcodeSubmit: (result: BarcodeResult) => false,
+});
 
 // Const
 const errorMessage = ref("");
 const overlay = ref(false);
 const paused = ref(false);
-const camResult = ref(props.finalResults);
 const formatsCamera: BarcodeFormat[] = [
   "aztec",
   "code_128",
@@ -86,14 +80,6 @@ function onDetect(result: DetectedBarcode[]) {
   paused.value = true;
   const newBarcode = result[0];
 
-  for (const existingBarcode of props.finalResults) {
-    if (existingBarcode.barNumber === newBarcode.rawValue.toString()) {
-      alert("Barcode already added");
-      paused.value = false;
-      overlay.value = false;
-      return;
-    }
-  }
   emit("barcodeSubmit", {
     barNumber: newBarcode.rawValue,
     format: newBarcode.format,
@@ -101,12 +87,11 @@ function onDetect(result: DetectedBarcode[]) {
 
   overlay.value = false;
   paused.value = false;
-
   alert(
     "Barcode: " +
-      camResult.value[camResult.value.length - 1].barNumber +
+      result[result.length - 1].rawValue +
       "\nFormat: " +
-      camResult.value[camResult.value.length - 1].format
+      result[result.length - 1].format
   );
   return;
 }

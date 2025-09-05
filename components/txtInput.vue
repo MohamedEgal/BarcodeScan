@@ -3,26 +3,13 @@
 import type { BarcodeResult } from "~/types/BarcodeModule";
 import { checkBarcodeFormat } from "#imports";
 
-// Props
-const props = defineProps<{
-  finalResults: readonly BarcodeResult[];
-  textField: string;
-}>();
-
 // Emits
-const emits = defineEmits({
-  checkField: (input: string) => false,
+const emit = defineEmits({
   barcodeSubmit: (result: BarcodeResult) => false,
 });
 
 // ------------------------- CONST ---------------------------
 const textField = ref("");
-
-// watch(textField, (newVal) => {
-//   emit("checkField", newVal);
-// });
-
-//!!! ^^^^ Put this back if textfield and scanner both runs at the same time
 
 //--------------------- Barcode scanner submit ----------------------
 
@@ -31,21 +18,17 @@ function barcodeSubmit(barScan: string) {
     alert("No Barcode Detected");
     return;
   }
-  for (const existingBarcode of props.finalResults) {
-    if (existingBarcode.barNumber === barScan) {
-      alert("Barcode already added");
-      return;
-    }
-  }
+
   const format = checkBarcodeFormat(barScan);
   if (!format) {
     return;
   }
   if (format) {
-    emits("barcodeSubmit", {
+    emit("barcodeSubmit", {
       barNumber: barScan,
       format: format,
     });
+    alert("Submitted: " + barScan + ". Format: " + format);
   }
 }
 
